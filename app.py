@@ -15,7 +15,11 @@ def authenticate():
     try:
         # Initialize the OAuth flow
         flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
-        
+
+        # Set the redirect URI explicitly
+        redirect_uri = 'https://concept-connector.onrender.com/oauth-callback'
+        flow.redirect_uri = redirect_uri
+
         # Generate the authorization URL
         auth_url, _ = flow.authorization_url(prompt='consent')
 
@@ -32,7 +36,9 @@ def authenticate():
 def oauth_callback():
     try:
         # Initialize the OAuth flow again
+        redirect_uri = 'https://concept-connector.onrender.com/oauth-callback'
         flow = InstalledAppFlow.from_client_secrets_file('credentials.json', SCOPES)
+        flow.redirect_uri = redirect_uri
 
         # Retrieve the authorization response URL
         flow.fetch_token(authorization_response=request.url)
@@ -71,4 +77,3 @@ def list_files():
 
 if __name__ == '__main__':
     app.run(debug=True)
-
