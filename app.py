@@ -58,7 +58,7 @@ def list_files():
     try:
         # Load saved credentials
         if not os.path.exists('token.json'):
-            return jsonify({'error': 'You must authenticate first using /authenticate'})
+            return jsonify({'error': 'You must authenticate first using /authenticate'}), 401
         
         with open('token.json', 'r') as token:
             creds_data = json.load(token)
@@ -72,8 +72,37 @@ def list_files():
 
         return jsonify({'files': files})
     except Exception as e:
-        return jsonify({'error': str(e)})
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/search-files', methods=['GET'])
+def search_files():
+    try:
+        query = request.args.get('query', '').lower()
+        if not query:
+            return jsonify({'error': 'Please provide a search query.'}), 400
+        
+        # Load saved credentials
+        if not os.path.exists('token.json'):
+            return jsonify({'error': 'You must authenticate first using /authenticate'}), 401
+        
+        with open('token.json', 'r') as token:
+            creds_data = json.load(token)
+            creds = Credentials.from_authorized_user_info(creds_data, SCOPES)
+
+        # Build the Drive API service
+        service = build('drive', 'v3', credentials=creds)
+        folder_id = '1A9jEnpg_2YXKA37TSeE1_--7s43Ti0yF'
+        results = service.files().list(q=f"'{folder_id}' in parents", fields="files(id, name)").execute()
+        files = results.get('files', [])
+
+        # Filter files by query
+        filtered_files = [file for file in files if query in file['name'].lower()]
+        return jsonify({'files': filtered_files})
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 
 if __name__ == '__main__':
     app.run(debug=True)
+
